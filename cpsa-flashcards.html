@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CPSA // Flashcards</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev: #0f141c;
+  --surface: #131923;
+  --surface-2: #1a212d;
+  --border: #1f2937;
+  --border-bright: #2d3748;
+  --text: #e6edf3;
+  --text-dim: #8b949e;
+  --text-faint: #4a5568;
+  --accent: #fbbf24;
+  --accent-dim: #d97706;
+  --accent-glow: rgba(251, 191, 36, 0.15);
+  --ok: #4ade80;
+  --bad: #f87171;
+  --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --display: 'Space Grotesk', 'JetBrains Mono', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+body {
+  background-image:
+    radial-gradient(ellipse at top right, rgba(251,191,36,0.05), transparent 50%),
+    radial-gradient(ellipse at bottom left, rgba(251,191,36,0.03), transparent 50%);
+  background-attachment: fixed;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px);
+  background-size: 32px 32px;
+  z-index: 0;
+}
+
+.app {
+  position: relative;
+  z-index: 1;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+}
+
+.hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-bottom: 20px; margin-bottom: 32px;
+  border-bottom: 1px solid var(--border);
+}
+.hdr-left { display: flex; align-items: center; gap: 14px; }
+.logo {
+  width: 36px; height: 36px;
+  border: 1px solid var(--accent);
+  display: grid; place-items: center;
+  font-weight: 800; font-size: 13px;
+  color: var(--accent);
+  background: var(--accent-glow);
+}
+.title { font-family: var(--display); font-size: 20px; font-weight: 700; letter-spacing: 0.5px; }
+.subtitle { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 2px; margin-top: 2px; }
+.hdr-status { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1.5px; }
+
+.section-label {
+  font-size: 11px; color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 2.5px;
+  margin-bottom: 14px;
+  display: flex; align-items: center; gap: 8px;
+}
+.section-label::before {
+  content: ''; width: 24px; height: 1px; background: var(--accent);
+}
+
+.stats-bar {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
+  background: var(--border);
+  margin-bottom: 36px;
+  border: 1px solid var(--border);
+}
+.stat { background: var(--surface); padding: 18px 20px; }
+.stat-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px; }
+.stat-val { font-family: var(--display); font-size: 26px; font-weight: 600; color: var(--text); }
+.stat-val .accent { color: var(--accent); }
+
+.cat-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
+  margin-bottom: 36px;
+}
+.cat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 18px 20px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+}
+.cat-card:hover {
+  border-color: var(--accent);
+  background: var(--surface-2);
+  transform: translateY(-1px);
+}
+.cat-card-title { font-family: var(--display); font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+.cat-card-meta { font-size: 11px; color: var(--text-dim); }
+.cat-card-meta .acc { color: var(--ok); font-weight: 600; }
+.cat-card-meta .acc.bad { color: var(--bad); }
+.cat-card-meta .acc.warn { color: var(--accent); }
+.cat-card-pct-bar { height: 3px; background: var(--border); margin-top: 12px; }
+.cat-card-pct-fill { height: 100%; background: var(--accent); transition: width 0.4s ease; }
+
+.mode-row {
+  display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap;
+}
+.mode-btn {
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  padding: 10px 16px;
+  border: 1px solid var(--border-bright);
+  background: var(--surface);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.mode-btn.active {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+}
+.mode-btn:hover:not(.active) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ========== CARD VIEW ========== */
+.card-bar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 20px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  margin-bottom: 24px;
+  font-size: 12px;
+}
+.card-bar-left { display: flex; gap: 24px; }
+.card-bar-item { color: var(--text-dim); letter-spacing: 1px; }
+.card-bar-item strong { color: var(--text); font-weight: 600; }
+.card-bar-item.accent strong { color: var(--accent); }
+
+.progress-bar {
+  height: 3px; background: var(--border);
+  margin-bottom: 32px; position: relative; overflow: hidden;
+}
+.progress-fill {
+  position: absolute; top: 0; left: 0; height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-dim));
+  transition: width 0.3s ease;
+}
+
+.flashcard-wrap {
+  perspective: 1500px;
+  margin-bottom: 28px;
+  min-height: 280px;
+}
+.flashcard {
+  position: relative;
+  width: 100%;
+  min-height: 280px;
+  transform-style: preserve-3d;
+  transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+.flashcard.flipped { transform: rotateY(180deg); }
+.face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 36px 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.face.back { transform: rotateY(180deg); border-color: var(--accent-dim); background: var(--bg-elev); }
+.face-label {
+  position: absolute; top: 14px; left: 16px;
+  font-size: 10px; color: var(--text-faint);
+  text-transform: uppercase; letter-spacing: 2.5px;
+}
+.face-cat {
+  position: absolute; top: 14px; right: 16px;
+  font-size: 10px; color: var(--accent);
+  text-transform: uppercase; letter-spacing: 2px;
+}
+.face-content {
+  text-align: center;
+  font-family: var(--display);
+  font-weight: 600;
+  word-break: break-word;
+}
+.face.front .face-content {
+  font-size: 32px;
+  letter-spacing: -0.5px;
+  color: var(--accent);
+  line-height: 1.2;
+}
+.face.back .face-content {
+  font-size: 20px;
+  color: var(--text);
+  line-height: 1.4;
+}
+.face-hint {
+  margin-top: 24px;
+  font-size: 10px;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+.face .extra {
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-weight: 400;
+  line-height: 1.55;
+  max-width: 600px;
+  text-align: center;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+}
+.action-btn {
+  padding: 14px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  border: 1px solid var(--border-bright);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.action-btn:hover { background: var(--surface-2); }
+.action-btn.miss { border-color: var(--bad); color: var(--bad); }
+.action-btn.miss:hover { background: rgba(248, 113, 113, 0.1); }
+.action-btn.hit { border-color: var(--ok); color: var(--ok); }
+.action-btn.hit:hover { background: rgba(74, 222, 128, 0.1); }
+.action-btn.skip { border-color: var(--border); color: var(--text-dim); }
+.action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.bottom-row {
+  margin-top: 24px;
+  display: flex; gap: 12px; justify-content: space-between;
+}
+.btn {
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  padding: 10px 18px;
+  border: 1px solid var(--border-bright);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+.btn.ghost { background: transparent; color: var(--text-dim); border-color: var(--border); }
+.btn.ghost:hover { color: var(--bad); border-color: var(--bad); }
+
+.session-complete {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 48px 24px;
+  text-align: center;
+  margin-bottom: 24px;
+}
+.complete-score {
+  font-family: var(--display);
+  font-size: 56px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+.complete-msg { font-size: 13px; color: var(--text-dim); margin-bottom: 24px; }
+.complete-stats { display: flex; gap: 32px; justify-content: center; font-size: 12px; }
+.complete-stats .item { color: var(--text-dim); }
+.complete-stats .item strong { display: block; font-size: 20px; color: var(--text); margin-top: 4px; font-family: var(--display); }
+
+@media (max-width: 720px) {
+  .app { padding: 20px 16px 48px; }
+  .stats-bar { grid-template-columns: repeat(2, 1fr); }
+  .cat-grid { grid-template-columns: 1fr; }
+  .face.front .face-content { font-size: 26px; }
+  .face.back .face-content { font-size: 17px; }
+  .face { padding: 24px 20px; }
+  .actions { grid-template-columns: 1fr; }
+  .card-bar-left { gap: 14px; flex-wrap: wrap; }
+}
+
+.hidden { display: none !important; }
+
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border-bright); }
+::-webkit-scrollbar-thumb:hover { background: var(--accent-dim); }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="hdr">
+    <div class="hdr-left">
+      <div class="logo">F</div>
+      <div>
+        <div class="title">CPSA Flashcards</div>
+        <div class="subtitle">Memorization Drill // V2.5 Trivia</div>
+      </div>
+    </div>
+    <div class="hdr-status" id="hdrStatus">Ready</div>
+  </div>
+
+  <!-- HOME -->
+  <div id="homeScreen">
+    <div class="section-label">Overall Progress</div>
+    <div class="stats-bar">
+      <div class="stat">
+        <div class="stat-label">Total Cards</div>
+        <div class="stat-val" id="statTotal">0</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Mastered</div>
+        <div class="stat-val"><span class="accent" id="statMastered">0</span></div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Need Practice</div>
+        <div class="stat-val" id="statWeak">0</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Sessions Done</div>
+        <div class="stat-val" id="statSessions">0</div>
+      </div>
+    </div>
+
+    <div class="section-label">Mode</div>
+    <div class="mode-row">
+      <button class="mode-btn active" id="modeAll" onclick="startSession('all')">All cards (random)</button>
+      <button class="mode-btn" id="modeWeak" onclick="startSession('weak')">Weak only</button>
+      <button class="mode-btn" id="modeFresh" onclick="startSession('fresh')">Unseen only</button>
+    </div>
+
+    <div class="section-label">Drill by Category</div>
+    <div class="cat-grid" id="catGrid"></div>
+
+    <div style="display: flex; gap: 12px; justify-content: flex-end;">
+      <button class="btn ghost" onclick="resetStats()">Reset all progress</button>
+    </div>
+  </div>
+
+  <!-- CARD VIEW -->
+  <div id="cardScreen" class="hidden">
+    <div class="card-bar">
+      <div class="card-bar-left">
+        <div class="card-bar-item accent">Mode: <strong id="cbMode">—</strong></div>
+        <div class="card-bar-item">Card <strong id="cbNum">1</strong>/<strong id="cbTotal">10</strong></div>
+        <div class="card-bar-item">Got: <strong id="cbHit">0</strong></div>
+        <div class="card-bar-item">Missed: <strong id="cbMiss">0</strong></div>
+      </div>
+      <div class="card-bar-item" id="cbHint">Click card to flip</div>
+    </div>
+
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+    </div>
+
+    <div class="flashcard-wrap">
+      <div class="flashcard" id="flashcard" onclick="flipCard()">
+        <div class="face front">
+          <div class="face-label">Front</div>
+          <div class="face-cat" id="frontCat">—</div>
+          <div class="face-content" id="frontText">—</div>
+          <div class="face-hint">Click to reveal</div>
+        </div>
+        <div class="face back">
+          <div class="face-label">Back</div>
+          <div class="face-cat" id="backCat">—</div>
+          <div class="face-content" id="backText">—</div>
+          <div class="extra" id="extraText"></div>
+          <div class="face-hint">Rate yourself below</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="action-btn miss" id="missBtn" onclick="rateCard('miss')" disabled>✕ Didn't know</button>
+      <button class="action-btn skip" id="skipBtn" onclick="rateCard('skip')" disabled>~ Almost</button>
+      <button class="action-btn hit" id="hitBtn" onclick="rateCard('hit')" disabled>✓ Got it</button>
+    </div>
+
+    <div class="bottom-row">
+      <button class="btn ghost" onclick="quitSession()">End session</button>
+      <button class="btn" onclick="flipCard()" id="flipBtn">Flip card</button>
+    </div>
+  </div>
+
+  <!-- COMPLETE -->
+  <div id="completeScreen" class="hidden">
+    <div class="session-complete">
+      <div class="complete-score" id="completeScore">100%</div>
+      <div class="complete-msg" id="completeMsg">Session complete.</div>
+      <div class="complete-stats">
+        <div class="item">Got it<strong id="csHit">0</strong></div>
+        <div class="item">Almost<strong id="csSkip">0</strong></div>
+        <div class="item">Missed<strong id="csMiss">0</strong></div>
+      </div>
+    </div>
+    <div style="display: flex; gap: 12px; justify-content: center;">
+      <button class="btn" onclick="showHome()">Back to home</button>
+      <button class="btn" onclick="retryWeak()" id="retryWeakBtn">Drill what you missed</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ====== FLASHCARD BANK ======
+const FLASHCARDS = [
+  // === PORTS & SERVICES ===
+  { id: 1, cat: "Ports", front: "TCP/20-21", back: "FTP (data, control)", extra: "Cleartext. Vulnerable to bounce attacks and credential sniffing. Often anonymous." },
+  { id: 2, cat: "Ports", front: "TCP/22", back: "SSH", extra: "Secure Shell. Also used by SFTP and SCP. Banner reveals version (e.g., OpenSSH_8.4)." },
+  { id: 3, cat: "Ports", front: "TCP/23", back: "Telnet", extra: "Cleartext remote shell. Deprecated but still found in legacy infra and network gear." },
+  { id: 4, cat: "Ports", front: "TCP/25", back: "SMTP", extra: "Mail relay. Often vulnerable to open relay, VRFY/EXPN user enumeration." },
+  { id: 5, cat: "Ports", front: "TCP/53, UDP/53", back: "DNS", extra: "UDP for queries < 512 bytes, TCP for zone transfers (AXFR) and larger responses." },
+  { id: 6, cat: "Ports", front: "UDP/67, UDP/68", back: "DHCP (Server, Client)", extra: "BOOTP-derived. DHCP starvation and rogue DHCP server attacks target this." },
+  { id: 7, cat: "Ports", front: "UDP/69", back: "TFTP", extra: "Trivial FTP. No auth. Used for config backups on switches/routers, IP phone provisioning." },
+  { id: 8, cat: "Ports", front: "TCP/79", back: "Finger", extra: "Legacy user-info service. 'finger root@host' enumerates users. Largely extinct." },
+  { id: 9, cat: "Ports", front: "TCP/80", back: "HTTP", extra: "Default web. Banner via 'Server' header reveals web server (Apache, Nginx, IIS)." },
+  { id: 10, cat: "Ports", front: "TCP/88, UDP/88", back: "Kerberos KDC", extra: "Used by AD. Targets for kerberoasting, AS-REP roasting, golden/silver ticket attacks." },
+  { id: 11, cat: "Ports", front: "TCP/110", back: "POP3", extra: "Post Office Protocol v3. Cleartext (POP3S uses 995). Mailbox download." },
+  { id: 12, cat: "Ports", front: "TCP/111, UDP/111", back: "rpcbind / portmapper", extra: "Sun RPC port mapper. rpcinfo -p shows registered services (NFS, NIS, etc.)." },
+  { id: 13, cat: "Ports", front: "UDP/123", back: "NTP", extra: "Time sync. Old versions vulnerable to monlist amplification DDoS." },
+  { id: 14, cat: "Ports", front: "UDP/137", back: "NetBIOS Name Service", extra: "NBNS. Used for name resolution on legacy Windows networks. nbtscan / nmblookup query this." },
+  { id: 15, cat: "Ports", front: "UDP/138", back: "NetBIOS Datagram Service", extra: "Connectionless NetBIOS messaging." },
+  { id: 16, cat: "Ports", front: "TCP/139", back: "NetBIOS Session (SMB over NBT)", extra: "Legacy SMB transport. Modern SMB uses TCP/445 directly." },
+  { id: 17, cat: "Ports", front: "TCP/143", back: "IMAP", extra: "Internet Message Access Protocol. IMAPS uses 993. Cleartext on 143." },
+  { id: 18, cat: "Ports", front: "UDP/161", back: "SNMP", extra: "Default community strings 'public' (read) and 'private' (write) are classic findings. snmpwalk to enumerate." },
+  { id: 19, cat: "Ports", front: "UDP/162", back: "SNMP Trap", extra: "Async SNMP notifications from devices to manager." },
+  { id: 20, cat: "Ports", front: "TCP/179", back: "BGP", extra: "Border Gateway Protocol. Internet routing. Misconfigured peers can leak routes." },
+  { id: 21, cat: "Ports", front: "TCP/389", back: "LDAP", extra: "Cleartext directory access. LDAPS = 636. Anonymous bind and null bind are classic findings." },
+  { id: 22, cat: "Ports", front: "TCP/443", back: "HTTPS", extra: "HTTP over TLS. Testssl.sh and sslscan for cipher/protocol audit." },
+  { id: 23, cat: "Ports", front: "TCP/445", back: "SMB (direct over TCP)", extra: "Microsoft-DS. EternalBlue (MS17-010) target. NTLM relay attack vector." },
+  { id: 24, cat: "Ports", front: "TCP/465 / TCP/587", back: "SMTPS / SMTP Submission", extra: "465 = implicit TLS (legacy). 587 = STARTTLS submission with auth." },
+  { id: 25, cat: "Ports", front: "UDP/500", back: "IKE (IPsec key exchange)", extra: "Internet Key Exchange. ike-scan to fingerprint VPN gateways." },
+  { id: 26, cat: "Ports", front: "TCP/512, 513, 514", back: "rexec, rlogin, rsh", extra: "Berkeley r-services. All cleartext, all deprecated. .rhosts files for trust." },
+  { id: 27, cat: "Ports", front: "UDP/514", back: "syslog", extra: "Note: same port number as rsh but UDP not TCP. Plaintext logging by default." },
+  { id: 28, cat: "Ports", front: "TCP/623", back: "IPMI / BMC", extra: "Server lights-out management (iDRAC, iLO). IPMI v2 cipher 0 = auth bypass." },
+  { id: 29, cat: "Ports", front: "TCP/636", back: "LDAPS", extra: "LDAP over SSL/TLS." },
+  { id: 30, cat: "Ports", front: "TCP/1080", back: "SOCKS proxy", extra: "Classic SOCKS proxy port. Open SOCKS = pivot opportunity." },
+  { id: 31, cat: "Ports", front: "UDP/1194", back: "OpenVPN (typical)", extra: "Default OpenVPN port (UDP or TCP)." },
+  { id: 32, cat: "Ports", front: "TCP/1433", back: "MSSQL", extra: "Microsoft SQL Server engine. xp_cmdshell, impacket-mssqlclient." },
+  { id: 33, cat: "Ports", front: "UDP/1434", back: "MSSQL Browser Service", extra: "Returns named-instance info. Pre-auth info leak." },
+  { id: 34, cat: "Ports", front: "TCP/1521", back: "Oracle TNS Listener", extra: "tnscmd10g / odat to enumerate SIDs and services." },
+  { id: 35, cat: "Ports", front: "TCP/1723", back: "PPTP", extra: "Microsoft PPTP VPN. Uses TCP/1723 + GRE (IP protocol 47). MS-CHAPv2 weaknesses." },
+  { id: 36, cat: "Ports", front: "TCP/2049", back: "NFS", extra: "Network File System. showmount -e to list exports. no_root_squash for privesc." },
+  { id: 37, cat: "Ports", front: "TCP/2375, 2376", back: "Docker Engine API (insecure, TLS)", extra: "Exposed 2375 = container takeover. Mount host fs and escape." },
+  { id: 38, cat: "Ports", front: "TCP/3268", back: "Global Catalog (AD)", extra: "Read-only subset of forest. Useful for cross-domain enumeration in AD." },
+  { id: 39, cat: "Ports", front: "TCP/3306", back: "MySQL / MariaDB", extra: "Default MySQL. Often weak/blank root in dev. LOAD_FILE for file read with FILE priv." },
+  { id: 40, cat: "Ports", front: "TCP/3389", back: "RDP", extra: "Remote Desktop. BlueKeep (CVE-2019-0708), NLA bypass on older versions." },
+  { id: 41, cat: "Ports", front: "UDP/4500", back: "IPsec NAT-Traversal", extra: "ESP wrapped in UDP/4500 when NAT is in path." },
+  { id: 42, cat: "Ports", front: "TCP/5060, 5061", back: "SIP (cleartext, TLS)", extra: "VoIP signaling. SIPVicious for testing." },
+  { id: 43, cat: "Ports", front: "TCP/5432", back: "PostgreSQL", extra: "Default Postgres. COPY...FROM PROGRAM = RCE if superuser." },
+  { id: 44, cat: "Ports", front: "TCP/5900", back: "VNC", extra: "Remote framebuffer. Often weak/no password. vncviewer / hydra." },
+  { id: 45, cat: "Ports", front: "TCP/5985, 5986", back: "WinRM (HTTP, HTTPS)", extra: "Windows Remote Management / PowerShell remoting. Evil-WinRM for AD ops." },
+  { id: 46, cat: "Ports", front: "TCP/6379", back: "Redis", extra: "Often exposed unauthenticated. CONFIG SET dir + dbfilename = arbitrary file write." },
+  { id: 47, cat: "Ports", front: "TCP/8080, 8443", back: "HTTP/HTTPS alternate", extra: "Common Tomcat/Jenkins/proxy ports. Tomcat manager default creds = RCE via WAR upload." },
+  { id: 48, cat: "Ports", front: "TCP/9100", back: "JetDirect / Printer Raw", extra: "HP printers and others. PRET tool for printer exploitation." },
+  { id: 49, cat: "Ports", front: "TCP/9200, 9300", back: "Elasticsearch (REST, transport)", extra: "Often unauthenticated. Sensitive data exposure / RCE in older versions." },
+  { id: 50, cat: "Ports", front: "TCP/11211", back: "Memcached", extra: "Was used for huge amplification DDoS (UDP variant). Often unauthenticated." },
+  { id: 51, cat: "Ports", front: "TCP/27017, 27018", back: "MongoDB", extra: "Default Mongo. Pre-2.6 versions had no auth by default. Millions exposed historically." },
+  { id: 52, cat: "Ports", front: "Port ranges (IANA)", back: "0-1023 well-known / 1024-49151 registered / 49152-65535 dynamic", extra: "Memorize these three ranges." },
+  { id: 53, cat: "Ports", front: "TCP/113", back: "ident / auth", extra: "RFC 1413. Identifies remote user. Mostly historical. Sometimes used by IRC servers." },
+  { id: 54, cat: "Ports", front: "TCP/2222", back: "SSH (alt)", extra: "Common alternate SSH port (vanity). Not a standard but worth knowing." },
+
+  // === WINDOWS / AD ===
+  { id: 60, cat: "Windows/AD", front: "RID 500", back: "Built-in Administrator", extra: "Always exists. Cannot be locked out by default (changed in newer policies)." },
+  { id: 61, cat: "Windows/AD", front: "RID 501", back: "Guest", extra: "Disabled by default. Anonymous logons map here historically." },
+  { id: 62, cat: "Windows/AD", front: "RID 502", back: "krbtgt", extra: "Kerberos Ticket Granting account. Its NTLM hash signs all TGTs. Target for golden tickets." },
+  { id: 63, cat: "Windows/AD", front: "RID 512", back: "Domain Admins", extra: "The crown jewel group in any domain." },
+  { id: 64, cat: "Windows/AD", front: "RID 513 / 514 / 515 / 516", back: "Domain Users / Guests / Computers / Controllers", extra: "Default domain groups." },
+  { id: 65, cat: "Windows/AD", front: "RID 519", back: "Enterprise Admins", extra: "Forest-wide admin. Only exists in the forest root domain." },
+  { id: 66, cat: "Windows/AD", front: "RID 520", back: "Group Policy Creator Owners", extra: "Can create new GPOs (but not link them by default)." },
+  { id: 67, cat: "Windows/AD", front: "S-1-1-0", back: "Everyone", extra: "Includes Authenticated Users + Guest + (historically) anonymous." },
+  { id: 68, cat: "Windows/AD", front: "S-1-5-7", back: "Anonymous", extra: "Anonymous logon. Affected by RestrictAnonymous registry / GPO settings." },
+  { id: 69, cat: "Windows/AD", front: "S-1-5-11", back: "Authenticated Users", extra: "All users with valid logon. Excludes anonymous and guest." },
+  { id: 70, cat: "Windows/AD", front: "S-1-5-18", back: "LOCAL SYSTEM", extra: "Highest local privilege. NT AUTHORITY\\SYSTEM." },
+  { id: 71, cat: "Windows/AD", front: "S-1-5-19 / S-1-5-20", back: "LOCAL SERVICE / NETWORK SERVICE", extra: "Lower-privileged service accounts (vs. SYSTEM)." },
+  { id: 72, cat: "Windows/AD", front: "S-1-5-32-544", back: "Administrators (built-in local group)", extra: "Local Administrators group SID. Different from Domain Admins (RID 512)." },
+  { id: 73, cat: "Windows/AD", front: "Event 4624", back: "Successful logon", extra: "Look at LogonType for what kind. Source IP in NetworkAddress field." },
+  { id: 74, cat: "Windows/AD", front: "Event 4625", back: "Failed logon", extra: "Failure code (0xC000006A=bad password, 0xC0000234=locked out, etc.)." },
+  { id: 75, cat: "Windows/AD", front: "Event 4634 / 4647", back: "Logoff / User-initiated logoff", extra: "4634 includes all logoffs; 4647 only interactive user-initiated." },
+  { id: 76, cat: "Windows/AD", front: "Event 4648", back: "Logon with explicit credentials", extra: "Runas, scheduled tasks, mapped drives with /user. Lateral movement indicator." },
+  { id: 77, cat: "Windows/AD", front: "Event 4672", back: "Special privileges assigned to new logon", extra: "Privileged logon (admin). Fires alongside 4624." },
+  { id: 78, cat: "Windows/AD", front: "Event 4720 / 4724 / 4726", back: "User account created / Password reset / Account deleted", extra: "Account lifecycle events." },
+  { id: 79, cat: "Windows/AD", front: "Event 4728 / 4732 / 4756", back: "User added to global / local / universal group", extra: "Group membership change events. Watch for privileged group additions." },
+  { id: 80, cat: "Windows/AD", front: "Event 4768", back: "Kerberos TGT requested (AS-REQ)", extra: "First Kerberos exchange. Source of AS-REP roasting visibility." },
+  { id: 81, cat: "Windows/AD", front: "Event 4769", back: "Kerberos service ticket requested (TGS-REQ)", extra: "Kerberoasting attempts visible here (RC4 encryption type, anomalous service)." },
+  { id: 82, cat: "Windows/AD", front: "Event 4776", back: "NTLM authentication attempted", extra: "Successful/failed NTLM. Look for legacy auth on critical hosts." },
+  { id: 83, cat: "Windows/AD", front: "Logon Type 2", back: "Interactive", extra: "Local keyboard logon (console)." },
+  { id: 84, cat: "Windows/AD", front: "Logon Type 3", back: "Network", extra: "Accessing share, RPC, etc. Most common logon type on servers." },
+  { id: 85, cat: "Windows/AD", front: "Logon Type 4", back: "Batch", extra: "Scheduled task / batch job." },
+  { id: 86, cat: "Windows/AD", front: "Logon Type 5", back: "Service", extra: "Service starting under a user account." },
+  { id: 87, cat: "Windows/AD", front: "Logon Type 7", back: "Unlock", extra: "Workstation unlock from lock screen." },
+  { id: 88, cat: "Windows/AD", front: "Logon Type 8", back: "NetworkCleartext", extra: "Network logon with cleartext credentials (e.g., HTTP Basic, classic ASP). Red flag." },
+  { id: 89, cat: "Windows/AD", front: "Logon Type 9", back: "NewCredentials", extra: "Runas with /netonly. Process gets new creds for outbound auth only." },
+  { id: 90, cat: "Windows/AD", front: "Logon Type 10", back: "RemoteInteractive (RDP)", extra: "Remote desktop logon. Watch for sources outside admin networks." },
+  { id: 91, cat: "Windows/AD", front: "Logon Type 11", back: "CachedInteractive", extra: "Interactive logon using cached credentials (DC unreachable)." },
+  { id: 92, cat: "Windows/AD", front: "NetBIOS <00>", back: "Workstation (host) service", extra: "Standard host entry." },
+  { id: 93, cat: "Windows/AD", front: "NetBIOS <03>", back: "Messenger service", extra: "User receives messages here. Legacy net send target." },
+  { id: 94, cat: "Windows/AD", front: "NetBIOS <1B>", back: "Domain Master Browser (PDC)", extra: "Indicates the primary domain controller on a NetBIOS network." },
+  { id: 95, cat: "Windows/AD", front: "NetBIOS <1C>", back: "Domain Controllers group", extra: "Group registration containing all DCs in the domain." },
+  { id: 96, cat: "Windows/AD", front: "NetBIOS <1D>", back: "Master Browser", extra: "Per-subnet master browser." },
+  { id: 97, cat: "Windows/AD", front: "NetBIOS <1E>", back: "Browser Service Elections", extra: "Browser election traffic." },
+  { id: 98, cat: "Windows/AD", front: "NetBIOS <20>", back: "File Server (Server service)", extra: "Indicates the host shares files via SMB." },
+  { id: 99, cat: "Windows/AD", front: "ntds.dit", back: "Active Directory database file", extra: "On DCs at %SystemRoot%\\NTDS\\ntds.dit. Contains all AD objects + password hashes." },
+  { id: 100, cat: "Windows/AD", front: "SYSVOL share", back: "Replicated AD scripts/policies share", extra: "\\\\<dc>\\SYSVOL. World-readable to authenticated users. Historic Groups.xml cpasswd leak." },
+  { id: 101, cat: "Windows/AD", front: "NETLOGON share", back: "Logon scripts share on DCs", extra: "Auto-mapped at user logon. Source of scripts and policies." },
+  { id: 102, cat: "Windows/AD", front: "ms-DS-MachineAccountQuota", back: "Number of computers a user can join to the domain (default 10)", extra: "Abuse path: low-priv user creates computer accounts for delegation attacks." },
+
+  // === LINUX / UNIX ===
+  { id: 120, cat: "Linux/Unix", front: "umask 022", back: "Files 644, Dirs 755", extra: "Default on most distros. Owner rw, group/other r." },
+  { id: 121, cat: "Linux/Unix", front: "umask 027", back: "Files 640, Dirs 750", extra: "Hardened default — restricts world access entirely." },
+  { id: 122, cat: "Linux/Unix", front: "umask 077", back: "Files 600, Dirs 700", extra: "Most restrictive normal umask. Only owner can read/write." },
+  { id: 123, cat: "Linux/Unix", front: "SUID bit value", back: "4000 (chmod u+s)", extra: "Runs binary with owner's privileges. find / -perm -4000 to enumerate." },
+  { id: 124, cat: "Linux/Unix", front: "SGID bit value", back: "2000 (chmod g+s)", extra: "Runs with group's privileges. On directories: new files inherit group." },
+  { id: 125, cat: "Linux/Unix", front: "Sticky bit value", back: "1000 (chmod +t)", extra: "On dirs (e.g., /tmp): only file owner (or root) can delete files." },
+  { id: 126, cat: "Linux/Unix", front: "/etc/shadow $1$", back: "MD5 (legacy)", extra: "Broken — fast to crack." },
+  { id: 127, cat: "Linux/Unix", front: "/etc/shadow $2a$ / $2b$ / $2y$", back: "bcrypt", extra: "Cost-tunable. $2b$ is the current recommended variant." },
+  { id: 128, cat: "Linux/Unix", front: "/etc/shadow $5$", back: "SHA-256 with crypt", extra: "Default on some older distros." },
+  { id: 129, cat: "Linux/Unix", front: "/etc/shadow $6$", back: "SHA-512 with crypt", extra: "Default on many modern distros (Debian/Ubuntu/RHEL)." },
+  { id: 130, cat: "Linux/Unix", front: "/etc/shadow $y$ / $argon2id$", back: "yescrypt / Argon2id", extra: "Modern hashes on the newest distros." },
+  { id: 131, cat: "Linux/Unix", front: "/etc/passwd field 7", back: "Login shell", extra: "Format: user:x:uid:gid:gecos:home:shell. /sbin/nologin or /bin/false = no shell." },
+  { id: 132, cat: "Linux/Unix", front: "/etc/passwd: x in field 2", back: "Password is in /etc/shadow", extra: "Original location was passwd field 2 — moved to shadow for permissions." },
+  { id: 133, cat: "Linux/Unix", front: "/etc/sudoers NOPASSWD", back: "Sudo command requires no password", extra: "Classic privesc enumeration: 'sudo -l' to list." },
+  { id: 134, cat: "Linux/Unix", front: "/etc/cron.d/, /etc/cron.{hourly,daily,weekly,monthly}/", back: "System cron directories", extra: "Misconfigured permissions = privesc via writable cron jobs." },
+  { id: 135, cat: "Linux/Unix", front: "/var/spool/cron/crontabs/<user>", back: "User crontab files (Debian)", extra: "RHEL: /var/spool/cron/<user>. Per-user cron jobs." },
+  { id: 136, cat: "Linux/Unix", front: "Capabilities — cap_setuid", back: "Allows process to change UID", extra: "getcap -r / to enumerate. Modern alternative to SUID for fine-grained privilege." },
+  { id: 137, cat: "Linux/Unix", front: "Capabilities — cap_sys_admin", back: "Equivalent to root for many operations", extra: "Very powerful. Often abused for container escape." },
+  { id: 138, cat: "Linux/Unix", front: "Linux capability format in /proc", back: "/proc/<pid>/status -> Cap* lines (CapInh, CapPrm, CapEff, CapBnd)", extra: "Use capsh --decode=<hex> to decode the capability mask." },
+  { id: 139, cat: "Linux/Unix", front: "ld.so.preload", back: "Library preload file loaded into every dynamically-linked process", extra: "/etc/ld.so.preload. Writable here = root. Used by some rootkits." },
+  { id: 140, cat: "Linux/Unix", front: "PATH-based privesc", back: "Sudo command with relative path lets attacker substitute binary", extra: "Always use absolute paths in sudoers, and don't preserve PATH." },
+  { id: 141, cat: "Linux/Unix", front: "/etc/hosts.allow / /etc/hosts.deny", back: "TCP wrappers config", extra: "Legacy access control for inetd-style services. Largely replaced by iptables/firewalld." },
+  { id: 142, cat: "Linux/Unix", front: "Wheel group", back: "Traditional group of users allowed to su to root", extra: "On some distros, only wheel members can use su. RHEL: wheel = sudo by default." },
+  { id: 143, cat: "Linux/Unix", front: "Default SSH config: /etc/ssh/sshd_config — PermitRootLogin", back: "Allows root SSH login (yes/no/prohibit-password/forced-commands-only)", extra: "Best practice: 'no' or 'prohibit-password' (only key-based)." },
+
+  // === HTTP STATUS CODES ===
+  { id: 160, cat: "HTTP", front: "200", back: "OK", extra: "Successful response." },
+  { id: 161, cat: "HTTP", front: "201", back: "Created", extra: "POST/PUT created a resource. Usually returns Location header." },
+  { id: 162, cat: "HTTP", front: "204", back: "No Content", extra: "Successful but no body. Common for DELETE responses." },
+  { id: 163, cat: "HTTP", front: "301", back: "Moved Permanently", extra: "Permanent redirect. Browsers cache. SEO uses for URL canonicalization." },
+  { id: 164, cat: "HTTP", front: "302", back: "Found (Temporary)", extra: "Temporary redirect — original method may not be preserved. Use 307 to preserve." },
+  { id: 165, cat: "HTTP", front: "304", back: "Not Modified", extra: "Conditional GET response: client's cached copy is still valid." },
+  { id: 166, cat: "HTTP", front: "307", back: "Temporary Redirect", extra: "Like 302 but preserves request method (POST stays POST)." },
+  { id: 167, cat: "HTTP", front: "308", back: "Permanent Redirect", extra: "Like 301 but preserves request method." },
+  { id: 168, cat: "HTTP", front: "400", back: "Bad Request", extra: "Malformed request. Catch-all for client syntax errors." },
+  { id: 169, cat: "HTTP", front: "401", back: "Unauthorized", extra: "Authentication required (or failed). Server returns WWW-Authenticate header." },
+  { id: 170, cat: "HTTP", front: "403", back: "Forbidden", extra: "Authenticated but not permitted. Auth bypass attempts target this." },
+  { id: 171, cat: "HTTP", front: "404", back: "Not Found", extra: "Resource doesn't exist." },
+  { id: 172, cat: "HTTP", front: "405", back: "Method Not Allowed", extra: "Try different verb. Reveals allowed methods in Allow header." },
+  { id: 173, cat: "HTTP", front: "407", back: "Proxy Authentication Required", extra: "Proxy needs auth (Proxy-Authenticate header)." },
+  { id: 174, cat: "HTTP", front: "408 / 504", back: "Request Timeout / Gateway Timeout", extra: "408 = client too slow. 504 = upstream server too slow." },
+  { id: 175, cat: "HTTP", front: "413 / 414", back: "Payload Too Large / URI Too Long", extra: "Body or URL exceeds server limit." },
+  { id: 176, cat: "HTTP", front: "429", back: "Too Many Requests", extra: "Rate limited. Retry-After header tells when." },
+  { id: 177, cat: "HTTP", front: "500", back: "Internal Server Error", extra: "Generic server error. Often masks SQLi, NPEs, etc. — useful info leak in stack trace." },
+  { id: 178, cat: "HTTP", front: "501 / 502 / 503", back: "Not Implemented / Bad Gateway / Service Unavailable", extra: "501 = server doesn't support method. 502 = upstream bad response. 503 = overloaded/down." },
+
+  // === CRYPTO SIZES ===
+  { id: 200, cat: "Crypto", front: "MD5 output", back: "128 bits / 16 bytes / 32 hex chars", extra: "Broken for collisions (2004). Not for security." },
+  { id: 201, cat: "Crypto", front: "SHA-1 output", back: "160 bits / 20 bytes / 40 hex chars", extra: "Broken for collisions (SHAttered, 2017)." },
+  { id: 202, cat: "Crypto", front: "SHA-256 output", back: "256 bits / 32 bytes / 64 hex chars", extra: "Current standard. No practical attacks." },
+  { id: 203, cat: "Crypto", front: "SHA-512 output", back: "512 bits / 64 bytes / 128 hex chars", extra: "Sometimes preferred on 64-bit platforms." },
+  { id: 204, cat: "Crypto", front: "AES block size", back: "128 bits (fixed, regardless of key size)", extra: "Same for AES-128, AES-192, AES-256." },
+  { id: 205, cat: "Crypto", front: "AES key sizes", back: "128, 192, or 256 bits", extra: "Number of rounds: 10 / 12 / 14 respectively." },
+  { id: 206, cat: "Crypto", front: "DES key (effective)", back: "56 bits (64 with parity)", extra: "Brute-forceable since the 90s. Replaced by 3DES, then AES." },
+  { id: 207, cat: "Crypto", front: "3DES effective security", back: "~112 bits with three keys", extra: "Slow, and meet-in-the-middle attacks reduce real strength. Deprecated by NIST." },
+  { id: 208, cat: "Crypto", front: "DES/3DES block size", back: "64 bits", extra: "Smaller block = Sweet32 birthday attack at ~32GB. Don't use with TLS." },
+  { id: 209, cat: "Crypto", front: "RSA minimum modern key size", back: "2048 bits (NIST)", extra: "1024 deprecated. 3072 matches AES-128 security. 4096 ~ AES-128.5." },
+  { id: 210, cat: "Crypto", front: "ECDSA P-256 equivalent to", back: "~AES-128 (128-bit security)", extra: "Curve = secp256r1. Most common ECC curve." },
+  { id: 211, cat: "Crypto", front: "Diffie-Hellman safe prime size", back: "2048+ bits (1024 broken — Logjam)", extra: "Use ECDHE for modern KEX." },
+  { id: 212, cat: "Crypto", front: "AEAD AES mode", back: "GCM (Galois/Counter Mode)", extra: "Authenticated encryption with associated data. CCM is another AEAD mode." },
+  { id: 213, cat: "Crypto", front: "Insecure AES mode", back: "ECB (Electronic Code Book)", extra: "Identical plaintext blocks → identical ciphertext blocks. Famous ECB penguin." },
+  { id: 214, cat: "Crypto", front: "TLS 1.2 vs TLS 1.3", back: "1.3 = simpler handshake, mandatory forward secrecy, no CBC, no RSA key transport", extra: "1.0/1.1 deprecated (RFC 8996). SSLv2/v3 broken." },
+  { id: 215, cat: "Crypto", front: "PBKDF2 iteration recommendation (2023+)", back: "≥ 600,000 iterations (SHA-256)", extra: "OWASP guidance. Older NIST 800-132 said 10,000 — now obsolete." },
+  { id: 216, cat: "Crypto", front: "bcrypt cost factor", back: "Adaptive: 2^cost rounds (default ~10-12)", extra: "Increase cost as hardware gets faster." },
+  { id: 217, cat: "Crypto", front: "Heartbleed", back: "OpenSSL heartbeat memory disclosure (CVE-2014-0160)", extra: "Read up to 64KB of server memory per request. Versions 1.0.1 through 1.0.1f." },
+  { id: 218, cat: "Crypto", front: "POODLE", back: "Padding Oracle On Downgraded Legacy Encryption (SSLv3 CBC)", extra: "CVE-2014-3566. Forces SSLv3 downgrade, then CBC padding oracle." },
+  { id: 219, cat: "Crypto", front: "BEAST", back: "Browser Exploit Against SSL/TLS — TLS 1.0 CBC IV chaining", extra: "CVE-2011-3389. Predictable IV in CBC mode." },
+  { id: 220, cat: "Crypto", front: "FREAK / Logjam", back: "Force RSA / DH downgrade to export-grade", extra: "Export ciphers limited to 512-bit RSA / 512-bit DH. Crackable." },
+
+  // === DNS RECORDS ===
+  { id: 240, cat: "DNS", front: "A record", back: "Maps name → IPv4 address", extra: "Most common record." },
+  { id: 241, cat: "DNS", front: "AAAA record", back: "Maps name → IPv6 address", extra: "Quad-A." },
+  { id: 242, cat: "DNS", front: "MX record", back: "Mail exchanger (priority + hostname)", extra: "Lower priority = preferred." },
+  { id: 243, cat: "DNS", front: "NS record", back: "Authoritative name server for a zone", extra: "Lists DNS servers responsible for the zone." },
+  { id: 244, cat: "DNS", front: "CNAME record", back: "Canonical name / alias", extra: "Points one name to another. Cannot coexist with other records at the same name." },
+  { id: 245, cat: "DNS", front: "PTR record", back: "Reverse pointer (IP → name)", extra: "Lives in in-addr.arpa (v4) / ip6.arpa (v6) zones." },
+  { id: 246, cat: "DNS", front: "SOA record", back: "Start of Authority (zone metadata)", extra: "Contains primary NS, admin email, serial, refresh/retry/expire/min TTL." },
+  { id: 247, cat: "DNS", front: "TXT record", back: "Arbitrary text — used for SPF, DKIM, DMARC, verification tokens", extra: "Often holds sensitive info or recon clues." },
+  { id: 248, cat: "DNS", front: "SRV record", back: "Service location: priority, weight, port, target", extra: "Used by AD (_ldap._tcp, _kerberos._tcp, _gc._tcp)." },
+  { id: 249, cat: "DNS", front: "AXFR", back: "Full zone transfer query type", extra: "Misconfigured DNS servers may allow this from anonymous source." },
+  { id: 250, cat: "DNS", front: "IXFR", back: "Incremental zone transfer", extra: "Only changes since serial. Less common than AXFR." },
+  { id: 251, cat: "DNS", front: "CAA record", back: "Certification Authority Authorization", extra: "Restricts which CAs may issue certs for the domain." },
+  { id: 252, cat: "DNS", front: "DNS RD flag", back: "Recursion Desired (set by client)", extra: "Client asks server to resolve the full answer." },
+  { id: 253, cat: "DNS", front: "DNS RA flag", back: "Recursion Available (set by server)", extra: "Server tells client it supports recursion." },
+
+  // === WEB VULN QUICK REFERENCE ===
+  { id: 270, cat: "Web Vulns", front: "{{7*7}} returns 49", back: "Server-Side Template Injection (SSTI) — Jinja2 / Twig / Smarty", extra: "${7*7} = Spring / EL / Velocity. <%= 7*7 %> = ERB / ASP." },
+  { id: 271, cat: "Web Vulns", front: "' OR 1=1--", back: "SQL Injection probe", extra: "Tautology. Bypasses WHERE clause. Modern apps almost always block this." },
+  { id: 272, cat: "Web Vulns", front: "../../../../etc/passwd", back: "Path traversal / Local File Inclusion test", extra: "Try URL-encoded (%2e%2e%2f), double-encoded, null bytes for filters." },
+  { id: 273, cat: "Web Vulns", front: "<svg/onload=alert(1)>", back: "XSS payload (avoids <script> filters)", extra: "Many modern payloads use SVG, IMG, IFRAME, event handlers." },
+  { id: 274, cat: "Web Vulns", front: "<!DOCTYPE foo [<!ENTITY x SYSTEM 'file:///etc/passwd'>]>", back: "XXE — read local file via XML external entity", extra: "Or out-of-band via DTD on attacker server." },
+  { id: 275, cat: "Web Vulns", front: "http://169.254.169.254/", back: "AWS EC2 instance metadata endpoint (SSRF target)", extra: "IMDSv1 returns creds without auth. IMDSv2 requires token (PUT first)." },
+  { id: 276, cat: "Web Vulns", front: "metadata.google.internal", back: "GCP metadata endpoint (SSRF target)", extra: "Requires Metadata-Flavor: Google header by default." },
+  { id: 277, cat: "Web Vulns", front: "WAITFOR DELAY '0:0:5'", back: "MSSQL time-based blind SQLi probe", extra: "PostgreSQL: pg_sleep(5). MySQL: SLEEP(5). Oracle: dbms_pipe.receive_message." },
+  { id: 278, cat: "Web Vulns", front: "; ls or && id", back: "OS command injection probe", extra: "Try also | ` $() and URL-encoded variants. Time-based: sleep 5." },
+  { id: 279, cat: "Web Vulns", front: "SAMEORIGIN / DENY / ALLOW-FROM", back: "X-Frame-Options values", extra: "Anti-clickjacking. CSP frame-ancestors is the modern replacement." },
+  { id: 280, cat: "Web Vulns", front: "Cookie HttpOnly", back: "Prevents JavaScript reading the cookie (document.cookie)", extra: "Mitigates XSS-based session theft." },
+  { id: 281, cat: "Web Vulns", front: "Cookie Secure", back: "Sends cookie only over HTTPS", extra: "Required when SameSite=None is set." },
+  { id: 282, cat: "Web Vulns", front: "Cookie SameSite values", back: "Strict / Lax / None", extra: "Lax is the default in modern browsers. None requires Secure." },
+  { id: 283, cat: "Web Vulns", front: "OWASP A01:2021", back: "Broken Access Control", extra: "IDOR, missing function-level auth, force browsing." },
+  { id: 284, cat: "Web Vulns", front: "OWASP A03:2021", back: "Injection", extra: "SQLi, NoSQL, LDAP, command, etc. Moved from #1 in 2017 to #3." },
+  { id: 285, cat: "Web Vulns", front: "JWT format", back: "header.payload.signature (base64url-encoded, dot-separated)", extra: "Header and payload are JSON. Common bug: alg=none acceptance." },
+  { id: 286, cat: "Web Vulns", front: "Common JWT alg values", back: "HS256 (HMAC-SHA256), RS256 (RSA), ES256 (ECDSA), none (no signature)", extra: "alg=none and HS256/RS256 confusion are classic bypasses." },
+
+  // === DATABASE FINGERPRINTS ===
+  { id: 300, cat: "DB Fingerprints", front: "Error: ORA-01756", back: "Oracle", extra: "Oracle errors prefix with ORA-. DUAL table is another fingerprint." },
+  { id: 301, cat: "DB Fingerprints", front: "Error: ERROR 1064 (42000)", back: "MySQL / MariaDB", extra: "Standard 'You have an error in your SQL syntax' MySQL error." },
+  { id: 302, cat: "DB Fingerprints", front: "Microsoft OLE DB / Unclosed quotation mark", back: "MSSQL", extra: "Or 'Conversion failed when converting...' typical." },
+  { id: 303, cat: "DB Fingerprints", front: "PG::SyntaxError or pg_*", back: "PostgreSQL", extra: "Also: 'unterminated quoted string at or near...'" },
+  { id: 304, cat: "DB Fingerprints", front: "SQLite3::SQLException", back: "SQLite", extra: "Often embedded in apps. File-based DB." },
+  { id: 305, cat: "DB Fingerprints", front: "MSSQL stored proc xp_cmdshell", back: "Execute OS commands as service account", extra: "Disabled by default since 2005 but often re-enabled. xp_dirtree is hash-leak abuse." },
+  { id: 306, cat: "DB Fingerprints", front: "MySQL LOAD_FILE() / INTO OUTFILE", back: "File read / write (requires FILE privilege)", extra: "Path must be readable/writable by mysqld user. secure_file_priv may restrict." },
+  { id: 307, cat: "DB Fingerprints", front: "PostgreSQL COPY ... FROM PROGRAM", back: "RCE if superuser", extra: "PostgreSQL 9.3+. Run shell commands directly." },
+  { id: 308, cat: "DB Fingerprints", front: "Oracle DUAL table", back: "One-row dummy table — distinctive Oracle SQL fingerprint", extra: "Used in SELECT statements requiring FROM clause: SELECT 1 FROM DUAL." },
+
+  // === TOOLS / COMMANDS ===
+  { id: 320, cat: "Tools", front: "nmap -sS", back: "TCP SYN (stealth/half-open) scan", extra: "Default for privileged users. Doesn't complete handshake." },
+  { id: 321, cat: "Tools", front: "nmap -sT", back: "TCP connect() full handshake scan", extra: "Default for unprivileged users." },
+  { id: 322, cat: "Tools", front: "nmap -sU", back: "UDP scan", extra: "Slow. Distinguishes open/open|filtered. Use with -sV for version detection." },
+  { id: 323, cat: "Tools", front: "nmap -sV", back: "Version detection", extra: "Probes services for version banners." },
+  { id: 324, cat: "Tools", front: "nmap -sC", back: "Default NSE scripts", extra: "Same as --script=default. Common pairing: -sC -sV." },
+  { id: 325, cat: "Tools", front: "nmap -O", back: "OS fingerprinting", extra: "Active OS detection based on TCP/IP stack quirks." },
+  { id: 326, cat: "Tools", front: "nmap --script vuln", back: "Run vulnerability NSE scripts", extra: "Some are intrusive. Categories: safe, intrusive, vuln, exploit, dos, discovery, default." },
+  { id: 327, cat: "Tools", front: "nmap -Pn", back: "Skip host discovery (assume host is up)", extra: "Needed when ICMP/probe responses are blocked." },
+  { id: 328, cat: "Tools", front: "nmap -p-", back: "Scan all 65535 TCP ports", extra: "Default is top 1000. -p- ensures full coverage." },
+  { id: 329, cat: "Tools", front: "nmap -A", back: "Aggressive: OS, version, script, traceroute", extra: "Shorthand for -O -sV -sC --traceroute." },
+  { id: 330, cat: "Tools", front: "Hashcat -m 0", back: "MD5", extra: "Mode numbers: 0=MD5, 100=SHA1, 1400=SHA256, 1000=NTLM, 5500=NetNTLMv1, 5600=NetNTLMv2." },
+  { id: 331, cat: "Tools", front: "Hashcat -m 1000", back: "NTLM hash", extra: "Local Windows password hash from SAM." },
+  { id: 332, cat: "Tools", front: "Hashcat -m 5600", back: "NetNTLMv2 hash", extra: "Captured by Responder. NetNTLMv1 is -m 5500." },
+  { id: 333, cat: "Tools", front: "Hashcat -m 1800", back: "sha512crypt $6$", extra: "Linux /etc/shadow $6$ hashes." },
+  { id: 334, cat: "Tools", front: "Hashcat -m 3200", back: "bcrypt $2*$", extra: "Slow by design — small wordlists only." },
+  { id: 335, cat: "Tools", front: "Responder", back: "LLMNR/NBT-NS/MDNS poisoner — captures NetNTLM hashes", extra: "Default on internal pentests. Now firewalled in many segments." },
+  { id: 336, cat: "Tools", front: "Mimikatz: sekurlsa::logonpasswords", back: "Dump cached credentials from LSASS", extra: "Requires SeDebugPrivilege and high integrity." },
+  { id: 337, cat: "Tools", front: "Mimikatz: kerberos::ptt <ticket>", back: "Pass-the-Ticket — inject a Kerberos ticket into current session", extra: "Used with golden/silver tickets." },
+  { id: 338, cat: "Tools", front: "impacket secretsdump.py", back: "Remote SAM/NTDS/LSA dump (no Mimikatz needed)", extra: "Requires admin SMB access. Heavy AV signal." },
+  { id: 339, cat: "Tools", front: "BloodHound + SharpHound", back: "AD attack-path mapping via graph database", extra: "Collects sessions, group memberships, ACLs, GPO links. Cypher queries find paths." },
+  { id: 340, cat: "Tools", front: "Gobuster / Feroxbuster / Dirsearch", back: "Directory & file brute-forcing for web apps", extra: "Wordlists from SecLists. Watch status codes (200, 301, 403)." },
+  { id: 341, cat: "Tools", front: "Burp Suite Intruder attack types", back: "Sniper, Battering ram, Pitchfork, Cluster bomb", extra: "Sniper = one position. Battering ram = same payload across positions. Pitchfork = parallel. Cluster bomb = cartesian product." },
+  { id: 342, cat: "Tools", front: "sqlmap --dbms / --risk / --level", back: "DB hint / risk (1-3) / level (1-5)", extra: "Higher level = more tests. Higher risk = potentially destructive (UPDATE, etc.)." },
+
+  // === NETWORKING / MISC ===
+  { id: 360, cat: "Networking", front: "RFC 1918 private ranges", back: "10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16", extra: "Non-routable on internet. NAT'd to public address at egress." },
+  { id: 361, cat: "Networking", front: "169.254.0.0/16", back: "Link-local (APIPA, RFC 3927)", extra: "Auto-assigned when DHCP fails on Windows. Also AWS/cloud metadata IP." },
+  { id: 362, cat: "Networking", front: "127.0.0.0/8", back: "Loopback", extra: "127.0.0.1 is the most common. Whole /8 is reserved." },
+  { id: 363, cat: "Networking", front: "/24 = how many hosts", back: "254 usable (256 total - network - broadcast)", extra: "/25=126, /26=62, /27=30, /28=14, /29=6, /30=2." },
+  { id: 364, cat: "Networking", front: "CIDR /22 prefix length", back: "1022 usable hosts (4 × /24)", extra: "/23 = 510, /22 = 1022, /21 = 2046, /20 = 4094." },
+  { id: 365, cat: "Networking", front: "OSI Layer 2", back: "Data Link (Ethernet, ARP, MAC addresses)", extra: "Frames. ARP spoofing, VLAN hopping at this layer." },
+  { id: 366, cat: "Networking", front: "OSI Layer 3", back: "Network (IP, ICMP, routing)", extra: "Packets. IP-level firewalls operate here." },
+  { id: 367, cat: "Networking", front: "OSI Layer 4", back: "Transport (TCP, UDP, ports)", extra: "Segments. Port-based firewalls operate here." },
+  { id: 368, cat: "Networking", front: "OSI Layer 7", back: "Application (HTTP, SSH, SMTP, DNS, etc.)", extra: "Where WAFs and L7 proxies operate." },
+  { id: 369, cat: "Networking", front: "TCP 3-way handshake", back: "SYN → SYN+ACK → ACK", extra: "Established state. Tear-down is FIN, ACK, FIN, ACK." },
+  { id: 370, cat: "Networking", front: "TCP flags", back: "SYN, ACK, FIN, RST, PSH, URG, ECE, CWR, NS", extra: "Nine flags total in modern TCP." },
+  { id: 371, cat: "Networking", front: "IP protocol numbers — ICMP / TCP / UDP / ESP / AH", back: "1 / 6 / 17 / 50 / 51", extra: "Layer-3 protocol number in IP header. ESP = IPsec encrypted. AH = IPsec auth header." },
+  { id: 372, cat: "Networking", front: "CVSS v3.1 severity bands", back: "0.1-3.9 Low / 4.0-6.9 Medium / 7.0-8.9 High / 9.0-10.0 Critical", extra: "0 = None. Memorize boundaries." },
+  { id: 373, cat: "Networking", front: "PCI-DSS quarterly external scan", back: "Required by ASV-approved vendor (PCI-DSS req 11)", extra: "Internal scans = at least quarterly. After significant changes too." },
+  { id: 374, cat: "Networking", front: "NIST SP 800-115", back: "Technical Guide to Information Security Testing and Assessment", extra: "Industry-standard methodology document referenced by CREST." },
+  { id: 375, cat: "Networking", front: "OWASP top web vulnerabilities document", back: "OWASP Top 10 (current: 2021)", extra: "Released every few years. CPSA expects familiarity with the most recent version." }
+];
+
+const CATEGORIES = [...new Set(FLASHCARDS.map(c => c.cat))];
+
+// ====== STATE ======
+const STORAGE_KEY = 'cpsa_flashcards_v1';
+let state = loadState();
+let session = null;
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return { perCard: {}, sessionsDone: 0 };
+}
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
+}
+function resetStats() {
+  if (!confirm('Reset all flashcard progress?')) return;
+  state = { perCard: {}, sessionsDone: 0 };
+  saveState(); renderHome();
+}
+
+function getCardStatus(id) {
+  const s = state.perCard[id];
+  if (!s) return 'fresh';
+  if (s.hit >= 3 && s.hit > s.miss) return 'mastered';
+  if (s.miss >= s.hit && s.seen >= 2) return 'weak';
+  return 'learning';
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// ====== HOME ======
+function renderHome() {
+  document.getElementById('statTotal').textContent = FLASHCARDS.length;
+  document.getElementById('statSessions').textContent = state.sessionsDone;
+
+  let mastered = 0, weak = 0;
+  FLASHCARDS.forEach(c => {
+    const s = getCardStatus(c.id);
+    if (s === 'mastered') mastered++;
+    else if (s === 'weak') weak++;
+  });
+  document.getElementById('statMastered').textContent = mastered;
+  document.getElementById('statWeak').textContent = weak;
+
+  // Category grid
+  const grid = document.getElementById('catGrid');
+  let html = '';
+  CATEGORIES.forEach(cat => {
+    const cards = FLASHCARDS.filter(c => c.cat === cat);
+    let m = 0;
+    cards.forEach(c => { if (getCardStatus(c.id) === 'mastered') m++; });
+    const pct = Math.round((m / cards.length) * 100);
+    let cls = 'warn'; if (pct >= 75) cls = ''; else if (pct < 30) cls = 'bad';
+    const accCls = pct >= 75 ? '' : (pct < 30 ? 'bad' : 'warn');
+    html += `<div class="cat-card" onclick="startSession('cat','${cat}')">
+      <div class="cat-card-title">${cat}</div>
+      <div class="cat-card-meta">${cards.length} cards · <span class="acc ${accCls}">${pct}% mastered</span></div>
+      <div class="cat-card-pct-bar"><div class="cat-card-pct-fill" style="width:${pct}%"></div></div>
+    </div>`;
+  });
+  grid.innerHTML = html;
+}
+
+function showHome() {
+  document.getElementById('homeScreen').classList.remove('hidden');
+  document.getElementById('cardScreen').classList.add('hidden');
+  document.getElementById('completeScreen').classList.add('hidden');
+  document.getElementById('hdrStatus').textContent = 'Ready';
+  renderHome();
+}
+
+// ====== SESSION ======
+function startSession(mode, cat) {
+  let pool, label;
+  if (mode === 'all') {
+    pool = [...FLASHCARDS]; label = 'ALL CARDS';
+  } else if (mode === 'cat') {
+    pool = FLASHCARDS.filter(c => c.cat === cat); label = cat.toUpperCase();
+  } else if (mode === 'weak') {
+    pool = FLASHCARDS.filter(c => getCardStatus(c.id) === 'weak' || getCardStatus(c.id) === 'learning');
+    if (pool.length === 0) {
+      alert('No weak cards yet. Run some sessions first.');
+      return;
+    }
+    label = 'WEAK CARDS';
+  } else if (mode === 'fresh') {
+    pool = FLASHCARDS.filter(c => getCardStatus(c.id) === 'fresh');
+    if (pool.length === 0) {
+      alert('All cards have been seen. Pick another mode.');
+      return;
+    }
+    label = 'UNSEEN';
+  }
+
+  const n = Math.min(20, pool.length);
+  session = {
+    mode, label,
+    cards: shuffle(pool).slice(0, n),
+    idx: 0, hit: 0, miss: 0, skip: 0,
+    weakInSession: []
+  };
+
+  document.getElementById('cbMode').textContent = label;
+  document.getElementById('cbTotal').textContent = n;
+  document.getElementById('hdrStatus').textContent = 'In Session';
+  document.getElementById('homeScreen').classList.add('hidden');
+  document.getElementById('cardScreen').classList.remove('hidden');
+  document.getElementById('completeScreen').classList.add('hidden');
+  showCard();
+}
+
+function showCard() {
+  const c = session.cards[session.idx];
+  document.getElementById('cbNum').textContent = session.idx + 1;
+  document.getElementById('cbHit').textContent = session.hit;
+  document.getElementById('cbMiss').textContent = session.miss;
+  document.getElementById('progressFill').style.width = `${(session.idx / session.cards.length) * 100}%`;
+
+  document.getElementById('frontText').textContent = c.front;
+  document.getElementById('backText').textContent = c.back;
+  document.getElementById('frontCat').textContent = c.cat;
+  document.getElementById('backCat').textContent = c.cat;
+  document.getElementById('extraText').textContent = c.extra || '';
+
+  document.getElementById('flashcard').classList.remove('flipped');
+  document.getElementById('cbHint').textContent = 'Click card to flip';
+  document.getElementById('flipBtn').textContent = 'Flip card';
+
+  // Disable rating until flipped
+  ['hitBtn','missBtn','skipBtn'].forEach(b => document.getElementById(b).disabled = true);
+}
+
+function flipCard() {
+  const card = document.getElementById('flashcard');
+  card.classList.toggle('flipped');
+  if (card.classList.contains('flipped')) {
+    document.getElementById('cbHint').textContent = 'Rate yourself';
+    document.getElementById('flipBtn').textContent = 'Flip back';
+    ['hitBtn','missBtn','skipBtn'].forEach(b => document.getElementById(b).disabled = false);
+  } else {
+    document.getElementById('cbHint').textContent = 'Click card to flip';
+    document.getElementById('flipBtn').textContent = 'Flip card';
+    ['hitBtn','missBtn','skipBtn'].forEach(b => document.getElementById(b).disabled = true);
+  }
+}
+
+function rateCard(rating) {
+  const c = session.cards[session.idx];
+  if (!state.perCard[c.id]) state.perCard[c.id] = { hit: 0, miss: 0, seen: 0 };
+  state.perCard[c.id].seen++;
+
+  if (rating === 'hit') {
+    state.perCard[c.id].hit++;
+    session.hit++;
+  } else if (rating === 'miss') {
+    state.perCard[c.id].miss++;
+    session.miss++;
+    session.weakInSession.push(c);
+  } else { // skip / almost
+    state.perCard[c.id].miss += 0.5;
+    session.skip++;
+    session.weakInSession.push(c);
+  }
+  saveState();
+
+  if (session.idx + 1 >= session.cards.length) {
+    completeSession();
+  } else {
+    session.idx++;
+    showCard();
+  }
+}
+
+function quitSession() {
+  if (!confirm('End session early? Progress is saved.')) return;
+  showHome();
+}
+
+function completeSession() {
+  state.sessionsDone++;
+  saveState();
+  const total = session.cards.length;
+  const score = Math.round((session.hit / total) * 100);
+  document.getElementById('completeScore').textContent = `${score}%`;
+  document.getElementById('csHit').textContent = session.hit;
+  document.getElementById('csSkip').textContent = session.skip;
+  document.getElementById('csMiss').textContent = session.miss;
+  let msg = 'Session complete.';
+  if (score >= 90) msg = 'Solid. Most of this is locked in.';
+  else if (score >= 70) msg = 'Good progress. Run the weak set next.';
+  else if (score >= 50) msg = 'Getting there. Repetition is your friend.';
+  else msg = 'Lots still to absorb — that\'s fine. Run the weak set again.';
+  document.getElementById('completeMsg').textContent = msg;
+  document.getElementById('hdrStatus').textContent = 'Complete';
+  document.getElementById('cardScreen').classList.add('hidden');
+  document.getElementById('completeScreen').classList.remove('hidden');
+  document.getElementById('retryWeakBtn').disabled = session.weakInSession.length === 0;
+}
+
+function retryWeak() {
+  if (session.weakInSession.length === 0) return;
+  const pool = session.weakInSession;
+  session = {
+    mode: 'weak-retry', label: 'WEAK RETRY',
+    cards: shuffle(pool), idx: 0, hit: 0, miss: 0, skip: 0, weakInSession: []
+  };
+  document.getElementById('cbMode').textContent = 'WEAK RETRY';
+  document.getElementById('cbTotal').textContent = session.cards.length;
+  document.getElementById('completeScreen').classList.add('hidden');
+  document.getElementById('cardScreen').classList.remove('hidden');
+  document.getElementById('hdrStatus').textContent = 'In Session';
+  showCard();
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if (document.getElementById('cardScreen').classList.contains('hidden')) return;
+  if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); flipCard(); }
+  else if (e.key === '1' && !document.getElementById('missBtn').disabled) rateCard('miss');
+  else if (e.key === '2' && !document.getElementById('skipBtn').disabled) rateCard('skip');
+  else if (e.key === '3' && !document.getElementById('hitBtn').disabled) rateCard('hit');
+});
+
+renderHome();
+</script>
+</body>
+</html>
